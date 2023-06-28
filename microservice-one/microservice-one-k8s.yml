@@ -1,0 +1,98 @@
+apiVersion: v1
+kind: List
+items:
+  - apiVersion: v1
+    kind: ServiceAccount
+    metadata:
+      labels:
+        app: microservice-one
+      name: spring-apps-config-service-account
+
+  - apiVersion: rbac.authorization.k8s.io/v1
+    kind: Role
+    metadata:
+      namespace: default
+      name: config-reader
+    rules:
+      - apiGroups: [ "", "extensions", "apps" ]
+        resources: [ "configmaps", "secrets" ]
+        resourceNames: ["app-external-configs-test"]
+        verbs: [ "get", "list" ]
+
+  - apiVersion: rbac.authorization.k8s.io/v1
+    kind: RoleBinding
+    metadata:
+      labels:
+        app: microservice-one
+      name: config-reader:spring-apps-config-service-account
+    roleRef:
+      kind: Role
+      apiGroup: rbac.authorization.k8s.io
+      name: config-reader
+    subjects:
+      - kind: ServiceAccount
+        name: spring-apps-config-service-account
+
+  - apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: app-external-configs
+    data:
+      external-configs.yaml: |-
+        demo:
+          greeting:
+            message: 'Hello Kubernetes!!'
+
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: microservice-one-deployment
+    spec:
+      selector:
+        matchLabels:
+          app: microservice-one
+      template:
+        metadata:
+          labels:
+            app: microservice-one
+        spec:
+          serviceAccount: spring-apps-config-service-account
+          containers:
+            - name: ms-1
+              image: sriramponangi/config-management-and-updates-demo-eg-1-ms-1:v1.0.0
+              imagePullPolicy: IfNotPresent
+              volumeMounts:
+                - mountPath: /app/config
+                  name: config-volume
+              env:
+                - name: SPRING_CONFIG_IMPORT
+                  value: /app/config/external-configs.yaml
+              readinessProbe:
+                httpGet:
+                  port: 80
+                  path: /actuator/health/readiness
+              livenessProbe:
+                httpGet:
+                  port: 80
+                  path: /actuator/health/liveness
+              ports:
+                - containerPort: 80
+          volumes:
+            - name: config-volume
+              configMap:
+                name: app-external-configs
+
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      labels:
+        app: microservice-one
+      name: microservice-one
+    spec:
+      ports:
+        - name: http
+          port: 8080
+          targetPort: 80
+      selector:
+        app: microservice-one
+      type: NodePort
