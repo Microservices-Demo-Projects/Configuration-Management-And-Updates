@@ -7,18 +7,26 @@ items:
       name: app-external-configs
     data:
       external-configs.yaml: |-
+        info:
+          app:
+            instanceId: ${THIS_POD_NAME} #NOTE: THIS_POD_NAME is declared as Pods env variable below.
         demo:
           greeting:
             message: 'Hello World from Kubernetes!!'
         server:
           servlet:
-            context-path: /ms1/api
+            context-path: /demo1/ms1/api
+          port: 8080
+        management:
+          server:
+            port: 9090
 
   - apiVersion: apps/v1
     kind: Deployment
     metadata:
       name: microservice-one-deployment
     spec:
+      replicas: 2
       selector:
         matchLabels:
           app: microservice-one
@@ -29,7 +37,7 @@ items:
         spec:
           containers:
             - name: ms-1
-              image: sriramponangi/config-management-and-updates-demo-eg-1-ms-1:v1.0.0
+              image: sriramponangi/config-management-and-updates-demo-1-ms-1:v1.0.0
               imagePullPolicy: IfNotPresent
               volumeMounts:
                 - mountPath: /app/config
@@ -37,16 +45,31 @@ items:
               env:
                 - name: SPRING_CONFIG_IMPORT
                   value: /app/config/external-configs.yaml
+                - name: THIS_POD_NAME #NOTE: This is an example of exposing Pod information through env varibales.
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name     
               readinessProbe:
                 httpGet:
-                  port: 80
-                  path: /ms1/api/actuator/health/readiness
+                  port: 8080
+                  path: /demo1/ms1/api/readiness
+                failureThreshold: 3
+                initialDelaySeconds: 10
+                periodSeconds: 10
+                timeoutSeconds: 5
               livenessProbe:
                 httpGet:
-                  port: 80
-                  path: /ms1/api/actuator/health/liveness
+                  port: 8080
+                  path: /demo1/ms1/api/liveness
+                failureThreshold: 3
+                initialDelaySeconds: 10
+                periodSeconds: 10
+                timeoutSeconds: 5
               ports:
-                - containerPort: 80
+                - containerPort: 8080
+                  name: application
+                - containerPort: 9090
+                  name: management #NOTE: The 9090 port needs to be exposed explicitly since it's not exposed as part of Dockerfile.
           volumes:
             - name: config-volume
               configMap:
@@ -60,10 +83,16 @@ items:
       name: microservice-one
     spec:
       ports:
-        - name: http
-          port: 80
-          targetPort: 80
+        - name: http-app-functional-port
+          protocol: TCP
+          port: 8080
+          targetPort: 8080
           nodePort: 30080
+        - name: http-app-management-port
+          protocol: TCP
+          port: 9090
+          targetPort: 9090
+          nodePort: 30090
       selector:
         app: microservice-one
       type: NodePort

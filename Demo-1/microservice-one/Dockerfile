@@ -18,5 +18,13 @@ RUN mvn clean install
 ##########################################################
 FROM ${RUNTIME_IMAGE}
 COPY --from=build /microservice-one/target/microservice-one-*.jar /app/microservice-one.jar
-EXPOSE 80
-CMD ["java", "-jar", "-Dserver.port=80", "/app/microservice-one.jar"]
+EXPOSE 8080
+
+# NOTE:
+# The management port 9090 is diabled by default.
+# If required it can be exposed a runtime.
+# For Eg: docker run --expose=9090
+# Or from the kubernetes manifest YAML of pod (spec.container.ports...) configuration.
+# EXPOSE 9090
+
+CMD ["java", "-jar", "/app/microservice-one.jar"]

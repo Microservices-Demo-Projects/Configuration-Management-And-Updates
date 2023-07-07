@@ -10,6 +10,6 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class AppConfigs {
 
-    @Value("${demo.greeting.message:Hello World from local!!}")
+    @Value("${demo.greeting.message:Hello World from local!}")
     private String greetingMessage;
 }
