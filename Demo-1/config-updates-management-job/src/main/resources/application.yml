@@ -1,0 +1,25 @@
+spring:
+  main:
+    web-application-type: NONE
+
+
+configMapService:
+  namespace: ${CONFIGMAP_NAMESPACE:default}
+  name: ${CONFIGMAP_NAME:app-external-configs}
+  configMapDataKey: ${CONFIGMAP_DATA_KEY:external-configs.yaml}
+
+
+podService:
+  namespace: ${POD_NAMESPACE:default}
+  labelSelectors: ${POD_LABEL_SELECTORS:appType=microservice,refreshAPIEnabled=true,managementPort=9090}
+  clusterDomain: ${POD_CLUSTER_DOMAIN:cluster.local}
+  managementApiPort: ${POD_MANAGEMENT_API_PORT:9090}
+  refreshEndpoint: ${POD_REFRESH_ENDPOIND:/actuator/refresh}
+  mainAppContainerName: ${POD_MAIN_APP_CONTAINER_NAME:main-app}
+  externalPropertyFilePath: ${CONFIGMAP_EXTERNAL_PROPERTY_FILE_PATH:/app/config/external-configs.yaml}
+
+
+
+logging:
+  level:
+    com.example.config.updates.management.job: DEBUG

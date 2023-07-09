@@ -1,0 +1,74 @@
+apiVersion: v1
+kind: List
+items:
+  - apiVersion: v1
+    kind: ServiceAccount
+    metadata:
+      labels:
+        project: Configuration-Management-And-Updates
+        subProject: Demo-1    
+        app: config-updates-management-job
+      name: config-updates-management-job
+
+  - apiVersion: rbac.authorization.k8s.io/v1
+    kind: Role
+    metadata:
+      namespace: default
+      name: config-updates-management-job
+    rules:
+      - apiGroups: [ "", "extensions", "apps" ]
+        resources: [ "configmaps"]
+        resourceNames: ["app-external-configs"]
+        verbs: [ "get", "list" ]
+      - apiGroups: [ "" ]
+        resources: [ "pods"]
+        verbs: [ "get", "list" ]
+      - apiGroups: [""]
+        resources: ["pods/exec"]
+        verbs: ["*"]
+
+  - apiVersion: rbac.authorization.k8s.io/v1
+    kind: RoleBinding
+    metadata:
+      labels:
+        project: Configuration-Management-And-Updates
+        subProject: Demo-1    
+        app: config-updates-management-job
+      name: config-updates-management-job
+    roleRef:
+      kind: Role
+      apiGroup: rbac.authorization.k8s.io
+      name: config-updates-management-job
+    subjects:
+      - kind: ServiceAccount
+        name: config-updates-management-job
+
+  - apiVersion: batch/v1 
+    kind: Job 
+    metadata:   
+      name: config-updates-management-job
+      labels:
+        project: Configuration-Management-And-Updates
+        subProject: Demo-1    
+        app: config-updates-management-job
+    spec:
+      completions: 1
+      parallelism: 1
+      backoffLimit: 0
+      template:     
+        metadata:       
+          name: config-updates-management-job
+          labels:
+            project: Configuration-Management-And-Updates
+            subProject: Demo-1    
+            app: config-updates-management-job     
+        spec: 
+          serviceAccountName: config-updates-management-job
+          containers:
+            - name: main-job
+              image: sriramponangi/config-management-and-updates-demo-1-job-1:v1.0.0
+              imagePullPolicy: IfNotPresent
+              env:
+                - name: LOGGING_LEVEL_COM_EXAMPLE_CONFIG_UPDATES_MANAGEMENT_JOB
+                  value: TRACE
+          restartPolicy: Never
