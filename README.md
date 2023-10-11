@@ -1,6 +1,6 @@
 # Demo Project: Configuration Management And Updates
 
-## Demo-1: External Property Management and Dynamic Refresh with Kubernetes Config Map
+## Demo-1: External Property Management and Dynamic Propert Refresh(i.e., without restarting the application) using Kubernetes Config Map
 ### Description
 This demo aims to create one spring-boot application that can read/overwrite the properties from an external file. 
 In the demo, the external properties file is a YAML file generated using the data defined in a Kubernetes config map.
